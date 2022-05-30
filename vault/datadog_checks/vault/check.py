@@ -10,13 +10,14 @@ from datadog_checks.base.utils.time import get_timestamp
 from .common import API_METHODS, DEFAULT_API_VERSION, SYS_HEALTH_DEFAULT_CODES, SYS_LEADER_DEFAULT_CODES, Api, Leader
 from .config_models import ConfigMixin
 from .metrics import METRIC_MAP, ROUTE_METRICS_TO_TRANSFORM, construct_metrics_config
+from .vault import Vault
 
 
 class VaultCheckV2(OpenMetricsBaseCheckV2, ConfigMixin):
     __NAMESPACE__ = 'vault'
 
     DEFAULT_METRIC_LIMIT = 0
-
+    CHECK_NAME = 'vault'
     EVENT_LEADER_CHANGE = 'leader_change'
     SERVICE_CHECK_CONNECT = 'can_connect'
     SERVICE_CHECK_UNSEALED = 'unsealed'
@@ -182,18 +183,7 @@ class VaultCheckV2(OpenMetricsBaseCheckV2, ConfigMixin):
             )
 
     def access_api(self, url, ignore_status_codes=None):
-        if ignore_status_codes is None:
-            ignore_status_codes = []
-
-        try:
-            response = self.http.get(url)
-            if response.status_code not in ignore_status_codes:
-                response.raise_for_status()
-
-            return response.json()
-        except Exception as e:
-            self.service_check(self.SERVICE_CHECK_CONNECT, self.CRITICAL, message=str(e), tags=self._tags)
-            raise
+        return Vault.access_api(self, url, ignore_status_codes)
 
     def parse_config(self):
         self._api_url = self.config.api_url
